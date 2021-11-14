@@ -1,5 +1,6 @@
-var secondVal = 10;
-var addToUrl = '/api/v1/entries.json?count=';
+const milisecondsInDay = 86400000;
+const entriesApiPath = 'api/v1/entries.json';
+
 var urgentLowValue;
 var lowValue;
 var highValue;
@@ -86,19 +87,81 @@ function saveStorageData(callbackFunction){
   });
 }
 
-function loadDefaultVariables(){
-  saveStorageData(function(){
-    console.log("Extension done with initial load!");
-    webRequest();
-  })
+// Once the extension is installed we need to initiate the data structures
+chrome.runtime.onInstalled.addListener(function() {
+	chrome.storage.local.set( {entries: []}, function(){
+		//chrome.storage.local.get(null, (results) => {console.log(results);});
+	
+		// manually call the update entries once to initiate the array
+		updateEntries();
+
+		// Setup the recurring interval for every 150 seconds to update the data.
+		setInterval(updateEntries, 150 * 1000);
+		setInterval(updateTitle, 10 * 1000);
+	});
+});
+
+// this method is used to update the entries data structures and will ensure that each time it's called 
+function updateEntries() {
+	chrome.storage.local.get(['entries', 'siteUrl'], async (results) => {
+		console.log('Update Entries');
+		// get the data from the results
+		let entries = results.entries;
+		let siteURL = results.siteUrl;
+		
+		// ensure that the site URL has been determined in the configuration
+		if(siteURL){
+			// get the entry with the latest value
+			let yesterdayThershold = Date.now() - milisecondsInDay;
+			let latestEntryTime = entries.length == 0 ? yesterdayThershold :  Math.max.apply(Math, entries.map(function(entry) { return entry.date; }));
+
+			// construct the query
+			const url = new URL(siteURL);
+			url.pathname = entriesApiPath;
+			url.searchParams.append('count', 288); // set the count to the maximum number of entries in a 24 hour period, althought we may not need all of them
+			url.searchParams.append('find[date][$gt]', latestEntryTime); // set the latest time to only get new items
+			let updates = await fetchSync(url);
+
+			// update the data
+			if(updates.length){
+				entries = entries.concat(updates);
+
+				// prune off data points older than 24 hours and sort them to ensure they are in order 
+				entries = entries.filter(function(entry, index, arr){ 
+					return entry.date >= yesterdayThershold; 
+				});
+				// sort it from 0 = newest and 288 = oldest
+				entries.sort((entryA, entryB) => (entryA.date < entryB.date) ? 1 : -1)
+
+				// auto calculate the delta's
+				for(let j = 1; j < entries.length; j++){
+					if(entries[j - 1].delta === undefined){
+						entries[j - 1].delta = entries[j -1 ].sgv - entries[j].sgv;
+						entries[j - 1].deltaPerMinute = entries[j - 1].delta / ( (entries[j - 1].date - entries[j].date) / (1000 * 60));
+					}
+				}
+				chrome.storage.local.set({entries : entries});
+			}
+		}
+	});
 }
 
-chrome.runtime.onInstalled.addListener(function() {
-    //note: please clean this code up >_>
-    loadDefaultVariables();
-});
-//get data from nightscout!
-//https://test.herokuapp.com/api/v1/entries <- link stuff
+// this function will be called to update the title periodically
+function updateTitle(){
+	chrome.storage.local.get('entries', (results) => {
+		console.log('Update Title');
+		if(results.entries.length){
+			// get the latest entry to display in the title
+			let latestEntry = results.entries[0];
+			let unitType = 'mg/dl';
+			let deltaStatement = (latestEntry.delta > 0 ? '+' : '') + latestEntry.delta;
+			let latestDate = new Date(latestEntry.date);
+
+			chrome.browserAction.setTitle({ title: latestEntry.sgv + '\u0394' + deltaStatement + ' ' + unitType + '\n' + latestDate.toLocaleTimeString() });
+			chrome.browserAction.setBadgeText({ text: latestEntry.sgv.toString() });
+		}
+	});
+}
 
 function forceRefreshGraph() {
     if (refreshGraphFunc) {
@@ -141,6 +204,7 @@ function saveNotifID(notifID) {
         //notification has been sent. do nothing.
     });
 }
+
 //notification functions
 function notificationFunction(bgValue, dateValue, valueText, unitType) {
     var tempColor;
@@ -304,7 +368,6 @@ function checkBSvariables(callbackFunc) {
         }
     });
 }
-
 
 function clearNotifications(lastAlarmRaw) {
     chrome.notifications.clear("nightscout-alert", function() {
@@ -705,7 +768,6 @@ function colorProfileFunction(colorValue,callbackFunc){
     });
 }
 
-
 function profileWebRequest(profileURL, callbackFunctionWeb) {
     var defaultUnit = "mgdl";
     var unit;
@@ -781,48 +843,20 @@ function profileWebRequest(profileURL, callbackFunctionWeb) {
     xhr.send(null);
 }
 
-function webRequest(callbackFunc,fullChart) {
-    //we need a couple of variables. first of all, get the site URL.
-    chrome.storage.local.get(['siteUrl'], function(siteData) {
-        var siteUrlBase
-        if(fullChart == true){
-          siteUrlBase = manipulateURL(siteData,289);
-        }else{
-          siteUrlBase = manipulateURL(siteData,1);
-        }
-        //now, we need to see how much data we're supposed to load.
-        //yes... the data has data.
-        var xhr = new XMLHttpRequest();
-            xhr.open("GET", siteUrlBase, true);
-        xhr.onload = function(e) {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    //console.log(xhr.responseText);
-                    //everything is done. now, get the profile data and set to mgdl/mmol.
-                    if(fullChart == true){
-                      //since it's the full chart, just return the data ASAP!; 
-                      if(callbackFunc){
-                        callbackFunc(xhr.responseText);
-                      }
-                    }else{
-                      var profileURLBase = manipulateProfileURL(siteData);
-                      profileWebRequest(profileURLBase, function() {
-                          //console.log("PARSING DATA!");
-                          parseData(xhr.responseText, callbackFunc);
-                      });
-                    }
-                    // we are done. find a way to callback after all the data, too.
-                } else {
-                    webError();
-                }
-            }
-        };
-        xhr.onerror = function(e) {
-            //console.error(xhr.statusText);
-            webError();
-        };
-        xhr.send(null);
-    });
-}
 
-setInterval(webRequest, secondVal * 1000);
+
+// helper method for fetching data from the server
+async function fetchSync(url){
+  request = {
+    credentials: 'same-origin',
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  };
+  const response = await fetch(url.href, request);
+  // error checking here
+  if(response.status !== 200){
+    throw "Error fetching data";
+  }
+  
+  return await response.json();
+}

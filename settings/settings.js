@@ -279,10 +279,10 @@ function saveFunction() {
                             }, function() {
                             	chrome.storage.local.set({colors:themeList},function(){
                                 	//once saved, force reload.
-	                                chrome.extension.getBackgroundPage().webRequest(function() {
+	                                chrome.extension.getBackgroundPage().updateEntries(/*function() {
 	                                    //it is done reloading, force reload settings page!
 	                                    checkBSvariables();
-	                                });
+	                                }*/);
                                 });
                             });
                         });
