@@ -1,4 +1,4 @@
-var onPressButton
+var onPressButton;
 
 document.getElementById("backButton").onclick = function() {
     console.log("Going Back");
@@ -31,69 +31,65 @@ function mmoltoMGDL(mmolVal) {
 function checkBSvariables() {
 	if(document){
 	    // don't forget to check if mmol or mgdl!!!
-	    chrome.storage.local.get(['alarmValues'], function(result) {
-	        chrome.storage.local.get(['snoozeMinutes'], function(alarmSnoozeVal) {
-	            chrome.storage.local.get(['unitValue'], function(unitResult) {
-	            	chrome.storage.local.get(['colors'], function(colorResult) {
-		                var unitType = Object.values(unitResult)[0];
-		                var alarmValues = Object.values(result);
-		                var colorValues = Object.values(colorResult)[0];
-		                console.log(alarmValues);
-		                if (alarmValues) {
-		                    var urgentLowData = alarmValues[0][0];
-		                    var lowData = alarmValues[0][1];
-		                    var highData = alarmValues[0][2];
-		                    var urgentHighData = alarmValues[0][3];
-		                    //check if mmol
-		                    if (unitType == "mmol") {
-		                        urgentLowData[0] = mgdlToMMOL(urgentLowData[0]);
-		                        lowData[0] = mgdlToMMOL(lowData[0]);
-		                        highData[0] = mgdlToMMOL(highData[0]);
-		                        urgentHighData[0] = mgdlToMMOL(urgentHighData[0]);
-		                    }
-		                    var snoozeData = Number(Object.values(alarmSnoozeVal)[0]);
-		                    //check if any are changed.
-                            document.getElementById("urgentLowAlertValue").value = urgentLowData[0];
-                            document.getElementById("urgentLowAlertValue").placeholder = urgentLowData[0];
+	    chrome.storage.local.get(['alarmValues', 'snoozeMinutes', 'unitValue', 'colors'], function(result) {
+            
+			var unitType = result.unitValue;
+			var alarmValues = result.alarmValues;
+			var colorValues = result.colors;
+			
+			if (alarmValues) {
+				var urgentLowData = alarmValues[0][0];
+				var lowData = alarmValues[0][1];
+				var highData = alarmValues[0][2];
 
-                            document.getElementById("lowAlertValue").value = lowData[0];
-                            document.getElementById("lowAlertValue").placeholder = lowData[0];
+				var urgentHighData = alarmValues[0][3];
+				//check if mmol
+				if (unitType == "mmol") {
+					urgentLowData[0] = mgdlToMMOL(urgentLowData[0]);
+					lowData[0] = mgdlToMMOL(lowData[0]);
+					highData[0] = mgdlToMMOL(highData[0]);
+					urgentHighData[0] = mgdlToMMOL(urgentHighData[0]);
+				}
+				var snoozeData = Number(Object.values(alarmSnoozeVal)[0]);
+				//check if any are changed.
+				document.getElementById("urgentLowAlertValue").value = urgentLowData[0];
+				document.getElementById("urgentLowAlertValue").placeholder = urgentLowData[0];
 
-                            document.getElementById("highAlertValue").value = highData[0];
-                            document.getElementById("highAlertValue").placeholder = highData[0];
+				document.getElementById("lowAlertValue").value = lowData[0];
+				document.getElementById("lowAlertValue").placeholder = lowData[0];
 
-                            document.getElementById("urgentHighAlertValue").value = urgentHighData[0];
-                            document.getElementById("urgentHighAlertValue").placeholder = urgentHighData[0];
+				document.getElementById("highAlertValue").value = highData[0];
+				document.getElementById("highAlertValue").placeholder = highData[0];
 
-		                    document.getElementById("urgentLowEnabled").checked = urgentLowData[1];
-		                    document.getElementById("lowEnabled").checked = lowData[1];
-		                    document.getElementById("highEnabled").checked = highData[1];
-		                    document.getElementById("urgentHighEnabled").checked = urgentHighData[1];
-		                    console.log("SNOOZE DATA IS " + snoozeData);
-		                    if (isNaN(snoozeData)) {
-		                        //support for old users who don't have data.
-		                        snoozeData = 30;
-		                    }
-                            document.getElementById("alarmSnoozeLength").value = snoozeData;
-                            document.getElementById("alarmSnoozeLength").placeholder = snoozeData;
-		                    //set color box value.
-		                    if(colorValues == "colors"){
-		                    	document.getElementById("themeBox").options[1].selected = 'selected';
-		                    }else{
-		                    	document.getElementById("themeBox").options[0].selected = 'selected';
-		                    }
-		                    //now, set site url in the same function.
-		                    chrome.storage.local.get(['siteUrl'], function(siteResult) {
-		                        var siteUrlValue = Object.values(siteResult);
-		                        if (siteUrlValue != "") {
-                                    document.getElementById("siteURL").value = siteUrlValue;
-                                    document.getElementById("siteURL").placeholder = siteUrlValue;
-		                        }
-		                    });
-		                }
-	           		});
-	            });
-	        });
+				document.getElementById("urgentHighAlertValue").value = urgentHighData[0];
+				document.getElementById("urgentHighAlertValue").placeholder = urgentHighData[0];
+
+				document.getElementById("urgentLowEnabled").checked = urgentLowData[1];
+				document.getElementById("lowEnabled").checked = lowData[1];
+				document.getElementById("highEnabled").checked = highData[1];
+				document.getElementById("urgentHighEnabled").checked = urgentHighData[1];
+				console.log("SNOOZE DATA IS " + snoozeData);
+				if (isNaN(snoozeData)) {
+					//support for old users who don't have data.
+					snoozeData = 30;
+				}
+				document.getElementById("alarmSnoozeLength").value = snoozeData;
+				document.getElementById("alarmSnoozeLength").placeholder = snoozeData;
+				//set color box value.
+				if(colorValues == "colors"){
+					document.getElementById("themeBox").options[1].selected = 'selected';
+				}else{
+					document.getElementById("themeBox").options[0].selected = 'selected';
+				}
+				//now, set site url in the same function.
+				chrome.storage.local.get(['siteUrl'], function(siteResult) {
+					var siteUrlValue = Object.values(siteResult);
+					if (siteUrlValue != "") {
+						document.getElementById("siteURL").value = siteUrlValue;
+						document.getElementById("siteURL").placeholder = siteUrlValue;
+					}
+				});
+			}
 	    });
 	}
 }
@@ -237,8 +233,8 @@ function alertFunc(customMessage) {
 }
 
 function saveFunction() {
-    //first check if mmol
-    chrome.storage.local.get(['unitValue'], function(unitResult) {
+    chrome.storage.local.get(['settings'], function(result) {
+    	console.log(unitResult);
         var unitType = Object.values(unitResult)[0];
         var uLSaved = getValueText("urgentLowAlertValue", unitType);
         var lSaved = getValueText("lowAlertValue", unitType);
@@ -250,8 +246,6 @@ function saveFunction() {
         var uHCheckbox = getCheckValue("urgentHighEnabled");
         var themeList = getListValue("themeBox");
         var snoozeLength = getValueText("alarmSnoozeLength");
-        console.log(themeList);
-        console.log(uLSaved, lSaved, hSaved, uHSaved);
         //double check that they're all actual 
         if (uLSaved != false && lSaved != false && hSaved != false && uHSaved != false) {
         	if(uLSaved < lSaved){}else{alertFunc("ERROR: Urgent low alert value must be below the low alert value."); return;}
@@ -261,8 +255,7 @@ function saveFunction() {
             //now, parse the site url and see if it's a real site.
             getURLText(function(returnVal) {
                 if (returnVal != false) {
-                    chrome.storage.local.set({
-                        siteUrl: returnVal
+                    chrome.storage.local.set({siteUrl: returnVal
                     }, function() {
                         console.log("SAVED SITE URL!");
                         chrome.storage.local.set({
@@ -293,12 +286,10 @@ function saveFunction() {
             });
         } else {
             //whoopsies, we got some bad data owo
-            alertFunc("ERROR: Invalid Number.");
+            alertFunc("ERROR: Invalid Number");
         }
     });
 }
-
-
 
 document.getElementsByClassName("submitButton")[0].onclick = function() {
     //when submit button clicked, do some stuff.

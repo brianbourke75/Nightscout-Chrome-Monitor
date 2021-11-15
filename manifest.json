@@ -24,5 +24,6 @@
       "48": "images/nightscout48.png",
       "128": "images/nightscout128.png"
     },
+    "options_page": "settings.html",
     "manifest_version": 2
   }

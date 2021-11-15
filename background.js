@@ -89,6 +89,10 @@ function saveStorageData(callbackFunction){
 
 // Once the extension is installed we need to initiate the data structures
 chrome.runtime.onInstalled.addListener(function() {
+	chrome.storage.local.set({settings: {
+		'siteUrl': '',
+	}});
+
 	chrome.storage.local.set( {entries: []}, function(){
 		//chrome.storage.local.get(null, (results) => {console.log(results);});
 	
@@ -101,22 +105,26 @@ chrome.runtime.onInstalled.addListener(function() {
 	});
 });
 
-// this method is used to update the entries data structures and will ensure that each time it's called 
+// this method is used to update the entries data structures and will ensure that the entries data structure will always have the latest 24 hours of data
+// - If this is the first call it will retrieve all 24 hours of data, otherwise it will find the latest timestamp and get all entries since then
+// - Entries other than 24 hours will be removed
+// - Delta variabes and delta/minute will be calculated for incoming data
+// - Data is storted newset to oldest in the array
 function updateEntries() {
-	chrome.storage.local.get(['entries', 'siteUrl'], async (results) => {
+	chrome.storage.local.get(['entries', 'settings'], async (results) => {
 		console.log('Update Entries');
 		// get the data from the results
 		let entries = results.entries;
-		let siteURL = results.siteUrl;
+		let settings = results.settings;
 		
 		// ensure that the site URL has been determined in the configuration
-		if(siteURL){
+		if(settings.siteUrl){
 			// get the entry with the latest value
 			let yesterdayThershold = Date.now() - milisecondsInDay;
 			let latestEntryTime = entries.length == 0 ? yesterdayThershold :  Math.max.apply(Math, entries.map(function(entry) { return entry.date; }));
 
 			// construct the query
-			const url = new URL(siteURL);
+			const url = new URL(settings.siteUrl);
 			url.pathname = entriesApiPath;
 			url.searchParams.append('count', 288); // set the count to the maximum number of entries in a 24 hour period, althought we may not need all of them
 			url.searchParams.append('find[date][$gt]', latestEntryTime); // set the latest time to only get new items
@@ -155,9 +163,13 @@ function updateTitle(){
 			let latestEntry = results.entries[0];
 			let unitType = 'mg/dl';
 			let deltaStatement = (latestEntry.delta > 0 ? '+' : '') + latestEntry.delta;
+			let deltaPerMinuteStatement = (latestEntry.deltaPerMinute > 0 ? '+' : '') + latestEntry.deltaPerMinute;
 			let latestDate = new Date(latestEntry.date);
 
-			chrome.browserAction.setTitle({ title: latestEntry.sgv + '\u0394' + deltaStatement + ' ' + unitType + '\n' + latestDate.toLocaleTimeString() });
+			chrome.browserAction.setTitle({ title: 
+			    latestDate.toLocaleTimeString() + '\n' + 
+			    latestEntry.sgv + '\u0394' + deltaStatement + ' ' + unitType + '\n' +
+			    deltaPerMinute + '(mg/dl)/min'  });
 			chrome.browserAction.setBadgeText({ text: latestEntry.sgv.toString() });
 		}
 	});

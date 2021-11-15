@@ -860,9 +860,9 @@ function buttonClickFunc(button) {
         button.onclick = function() {
             console.log("HOLY COG BATMAN");
             button.blur();
-            window.location.href = "settings/settings.html";
+            window.location.href = "settings.html";
             chrome.browserAction.setPopup({
-                popup: "settings/settings.html"
+                popup: "settings.html"
             });
         };
     } else if (button.className == "nightscoutButton") {
@@ -916,6 +916,7 @@ function checkColorVariables(){
 //now, make a shitty force refresh function.
 
 window.onload = function() {
+	/*
     //this function lets you remotely activate the graph refresh.
     chrome.extension.getBackgroundPage().setGraphFunction(function() {
         //graph has been "force refreshed"
@@ -935,4 +936,5 @@ window.onload = function() {
         globalOldData = convertedData;
         //setInterval(checkForUpdates, 500);
     });
+    */
 }
