@@ -14,94 +14,45 @@ var defaultLowValue = 80;
 var defaultHighValue = 180;
 var defaultUrgentHighValue = 260;
 var snoozeMinutesDefault = 30;
-//array of ALL storage --important
-var storageArray = [{
-        siteUrl: defaultSite
-    }, {
-        bsTable: "dne"
-    }, {
-        dataAmount: 7
-    }, {
-        alarmValues: [
-            [defaultUrgentLowValue, true],
-            [defaultLowValue, true],
-            [defaultHighValue, true],
-            [defaultUrgentHighValue, true]
-        ]
-    },
-    {
-        lastAlarmName: "dne"
-    }, {
-        snoozeUnix: "dne"
-    }, {
-        snoozeMinutes: snoozeMinutesDefault
-    }, {
-        unitValue: "mgdl"
-    }, {
-        tempBsTable: "dne"
-    }, {
-        gottenProfileAlarms: false
-    }, {
-        lastProfileUrl: "" 
-    }, {
-        colors:false
-    },{
-        gottenColors:false
-    }
-];
-var storageInc = 0; //used for looping through storage
 
-function saveStorageData(callbackFunction){
-  chrome.storage.local.get(storageArray[storageInc], function(data){
-    chrome.storage.local.getBytesInUse(Object.keys(data), function(bytes){
-      //console.log(bytes+"BYTES")
-      if(bytes==0){
-        //does not exist. make sure to set default.
-        chrome.storage.local.set(storageArray[storageInc], function(){
-          console.log("SET "+Object.keys(storageArray[storageInc])+" TO "+Object.values(storageArray[storageInc]));
-          storageInc++;
-          if(storageInc < storageArray.length){
-            //do it again.
-            saveStorageData(callbackFunction)
-          }else{
-            if(callbackFunction){
-              //go back to loaddefaultvariables function.
-              callbackFunction();
-            }
-          }
-        });
-      }else{
-        //add 1 anyways.. we still need to go up
-        storageInc++; 
-        if(storageInc < storageArray.length){
-          //do it again.
-          saveStorageData(callbackFunction)
-        }else{
-          if(callbackFunction){
-            //go back to loaddefaultvariables function.
-            callbackFunction();
-          }
-        }
-      }
-    });
-  });
-}
 
 // Once the extension is installed we need to initiate the data structures
 chrome.runtime.onInstalled.addListener(function() {
-	chrome.storage.local.set({settings: {
-		'siteUrl': '',
-	}});
+	chrome.storage.local.clear();
+	chrome.storage.local.get(null, (results) => {
+		let settings = results.settings;
+		if(settings === undefined){
+	        settings = {
+				'siteUrl': '',
+				'urgentLowThreshold' : 55,
+				'urgentLowActivated': true,
 
-	chrome.storage.local.set( {entries: []}, function(){
-		//chrome.storage.local.get(null, (results) => {console.log(results);});
-	
-		// manually call the update entries once to initiate the array
-		updateEntries();
+				'lowThreshold': 80,
+				'lowActivated': true,
+				
+				'highThreshold': 180,
+				'highActivated': true,
+				
+				'urgentHighThreshold': 250,
+				'urgentHighActivated': true,
+				
+				'snoozeMinutes': 30
+			};
+		}
+		chrome.storage.local.set({ settings : settings }, function(){
+			let entries = results.entries;
+			if(entries === undefined){
+				entries = [];
+			}
+			chrome.storage.local.set( { entries : entries }, function(){
+				// manually call the update entries once to initiate the array
+				updateEntries();
 
-		// Setup the recurring interval for every 150 seconds to update the data.
-		setInterval(updateEntries, 150 * 1000);
-		setInterval(updateTitle, 10 * 1000);
+				// Setup the recurring interval for every 150 seconds to update the data.
+				setInterval(updateEntries, 150 * 1000);
+				setInterval(updateTitle, 10 * 1000);
+			});
+		});
 	});
 });
 

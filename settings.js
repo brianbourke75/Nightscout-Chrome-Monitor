@@ -318,6 +318,27 @@ document.getElementsByClassName("submitButton")[0].onclick = function() {
 	});
 }
 window.onload = function() {
-    //just loading! load all the data to display in settings now.
-    checkBSvariables();
+	document.getElementById("settings_body").append('');
+	chrome.storage.local.get('settings', function(results){
+		let settings = results.settings;
+		let urgentLowThresholdInput = document.getElementById("urgentLowThresholdInput");
+		let urgentlowActivatedInput = document.getElementById("urgentlowActivatedInput");
+
+        urgentLowThresholdInput.value = settings.urgentLowThreshold;
+        urgentlowActivatedInput.checked = settings.urgentLowActivated;
+        /*
+		document.getElementById("highAlertValue").value = highData[0];
+		document.getElementById("highAlertValue").placeholder = highData[0];
+
+		document.getElementById("urgentHighAlertValue").value = urgentHighData[0];
+		document.getElementById("urgentHighAlertValue").placeholder = urgentHighData[0];
+
+		document.getElementById("urgentLowEnabled").checked = urgentLowData[1];
+		document.getElementById("lowEnabled").checked = lowData[1];
+		document.getElementById("highEnabled").checked = highData[1];
+		document.getElementById("urgentHighEnabled").checked = urgentHighData[1];
+        */
+		document.getElementById("overlay");
+	});
+    //checkBSvariables();
 }

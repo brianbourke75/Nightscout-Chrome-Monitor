@@ -3,7 +3,8 @@
    <head>
       <link rel="stylesheet" href="settings.css">
    </head>
-   <body>
+   <body id="settings_body">
+      <div id="overlay" style="background-color:grey;position:absolute;top:0;left:0;height:100%;width:100%;z-index:999"></div>
       <div class="background">
          <div class="header">
             <img src="/../images/nightscout128.png" class="nightscoutLogo">
@@ -18,9 +19,9 @@
                <div class="innerContainer">
                   <div class="backgroundContainer">
                      <div class="innerBackground">
-                        <input type="checkbox" name="urgentLowEnabled" class="enabledBox" id="urgentLowEnabled"><br>	
+                        <input type="checkbox" id="urgentLowActivatedInput" class="enabledBox" ><br>	
                         <p class="enabledText">Enabled:</p>
-                        <textarea name="urgentLowAlertValue" rows="1" cols="5" placeholder="55" id="urgentLowAlertValue" class="alertValue"></textarea>
+                        <input type="number"  id="urgentLowThresholdInput" class="alertValue"></textarea>
                      </div>
                      <p class="alertText" id="urgentLowAlertText">Urgent Low Alert Value:</p>
                   </div>
